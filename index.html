@@ -510,139 +510,247 @@ function liveUpdate(id) {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// BUILD BOTTLE SVG
+// BUILD BOTTLE SVG — Pure Life style realistic bottle
 // ─────────────────────────────────────────────────────────────────
 function buildBottleHTML(d) {
-  var th       = getTheme(d.themeKey);
-  var fontCSS  = getFontCSS(d.fontKey);
-  var logo     = d._logo;
-  var W        = 300;
-  var H        = 640;
+  var th      = getTheme(d.themeKey);
+  var fontCSS = getFontCSS(d.fontKey);
+  var logo    = d._logo;
+  var W = 260, H = 860;
+  var cx = 130; // center x
 
-  // Minerals list
-  var minRows = '';
-  (d.minerals||[]).slice(0,8).forEach(function(m, i){
-    var y = 430 + i * 16;
-    minRows += '<text x="90" y="' + y + '" font-size="9.5" fill="' + th.light + '" opacity="0.9">' + esc(m.name) + '</text>'
-      + '<text x="210" y="' + y + '" font-size="9.5" fill="' + th.acc + '" text-anchor="end">' + esc(m.amount) + '</text>';
-  });
+  // ── Key Y coordinates (matching Pure Life proportions) ──
+  var capTopY    = 20;   // very top of cap
+  var capBotY    = 68;   // bottom of cap / top of neck thread ring
+  var neckBotY   = 110;  // neck widens into shoulder
+  var shldrBotY  = 175;  // shoulder ends, body starts
+  var lblTopY    = 180;  // label top
+  var lblBotY    = 390;  // label bottom (label is narrow band like Pure Life)
+  var waistTopY  = 410;  // brief straight section below label
+  var gripTopY   = 420;  // horizontal grip ridges start
+  var gripBotY   = 760;  // grip ridges end / taper to bottom
+  var botY       = 800;  // bottle base
 
-  // Wave paths
-  var wave1 = 'M0,260 Q40,240 80,260 Q120,280 160,260 Q200,240 240,260 Q280,280 300,260 L300,300 L0,300 Z';
-  var wave2 = 'M0,270 Q50,255 100,270 Q150,285 200,270 Q250,255 300,270 L300,300 L0,300 Z';
+  // Half-widths at key points
+  var capHW    = 28;   // cap is narrow
+  var neckTopHW= 22;   // very narrow at neck top
+  var neckBotHW= 32;   // neck bottom
+  var shldrHW  = 90;   // shoulder full width
+  var bodyHW   = 92;   // main body
+  var gripHW   = 88;   // grip section (slightly narrower than body)
+  var botHW    = 72;   // bottom taper
 
-  // Drop icon path (simple water drop)
-  function dropIcon(cx, cy, r) {
-    return '<ellipse cx="' + cx + '" cy="' + (cy+r*0.2) + '" rx="' + (r*0.7) + '" ry="' + (r*0.85) + '" fill="' + th.acc + '" opacity="0.9"/>'
-      + '<polygon points="' + cx + ',' + (cy-r*0.9) + ' ' + (cx-r*0.55) + ',' + (cy+r*0.2) + ' ' + (cx+r*0.55) + ',' + (cy+r*0.2) + '" fill="' + th.acc + '" opacity="0.9"/>';
+  // Full bottle outline - left side going down, right side going up
+  var outline =
+    // left side top-to-bottom
+    'M'+(cx-capHW)+','+(capBotY)+
+    ' L'+(cx-neckTopHW)+','+(capBotY+4)+
+    ' Q'+(cx-neckTopHW-2)+','+(neckBotY)+' '+(cx-neckBotHW)+','+(neckBotY)+
+    ' Q'+(cx-shldrHW+8)+','+(neckBotY+18)+' '+(cx-shldrHW)+','+(shldrBotY)+
+    ' L'+(cx-bodyHW)+','+(waistTopY)+
+    ' L'+(cx-gripHW)+','+(gripTopY)+
+    // grip ridges left
+    ' L'+(cx-gripHW)+','+(gripBotY)+
+    // taper to bottom
+    ' Q'+(cx-gripHW)+','+(botY)+' '+(cx-botHW)+','+(botY)+
+    // bottom
+    ' L'+(cx+botHW)+','+(botY)+
+    // right taper from bottom
+    ' Q'+(cx+gripHW)+','+(botY)+' '+(cx+gripHW)+','+(gripBotY)+
+    ' L'+(cx+gripHW)+','+(gripTopY)+
+    ' L'+(cx+bodyHW)+','+(waistTopY)+
+    ' L'+(cx+shldrHW)+','+(shldrBotY)+
+    ' Q'+(cx+shldrHW-8)+','+(neckBotY+18)+' '+(cx+neckBotHW)+','+(neckBotY)+
+    ' Q'+(cx+neckTopHW+2)+','+(capBotY+4)+' '+(cx+neckTopHW)+','+(capBotY+4)+
+    ' L'+(cx+capHW)+','+(capBotY)+
+    ' Z';
+
+  // grip ridge lines (horizontal bands like Pure Life)
+  var ridgeLines = '';
+  var numRidges = 9;
+  for (var ri = 0; ri <= numRidges; ri++) {
+    var ry = gripTopY + ri * (gripBotY - gripTopY) / numRidges;
+    // each ridge: slightly indent in middle → curved profile look
+    var ridgeHW = gripHW - 3 + Math.sin(ri * Math.PI / numRidges) * 3;
+    ridgeLines +=
+      '<line x1="'+(cx-ridgeHW)+'" y1="'+ry+'" x2="'+(cx+ridgeHW)+'" y2="'+ry+'" stroke="rgba(160,210,240,0.25)" stroke-width="1.2"/>';
+    // shadow under each ridge
+    if (ri < numRidges) {
+      ridgeLines +=
+        '<line x1="'+(cx-ridgeHW)+'" y1="'+(ry+2)+'" x2="'+(cx+ridgeHW)+'" y2="'+(ry+2)+'" stroke="rgba(0,0,0,0.07)" stroke-width="1.8"/>';
+    }
   }
 
-  var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" style="display:block;">'
+  // label dimensions
+  var lblX = cx - bodyHW + 2;
+  var lblY = lblTopY;
+  var lblW = (bodyHW - 2) * 2;
+  var lblH = lblBotY - lblTopY;
 
-    // ── Bottle body ──
-    + '<defs>'
-    +   '<linearGradient id="bottleGrad" x1="0" y1="0" x2="1" y2="0">'
-    +     '<stop offset="0%" stop-color="#b8d8f0" stop-opacity="0.18"/>'
-    +     '<stop offset="40%" stop-color="#ddeeff" stop-opacity="0.28"/>'
-    +     '<stop offset="70%" stop-color="#b8d8f0" stop-opacity="0.18"/>'
-    +     '<stop offset="100%" stop-color="#90c0e0" stop-opacity="0.12"/>'
-    +   '</linearGradient>'
-    +   '<linearGradient id="labelGrad" x1="0" y1="0" x2="0" y2="1">'
-    +     '<stop offset="0%" stop-color="' + th.top + '"/>'
-    +     '<stop offset="100%" stop-color="' + th.mid + '"/>'
-    +   '</linearGradient>'
-    +   '<clipPath id="labelClip">'
-    +     '<rect x="30" y="200" width="240" height="360" rx="8"/>'
-    +   '</clipPath>'
-    + '</defs>'
+  // minerals text inside label
+  var minRows = '';
+  (d.minerals||[]).slice(0,8).forEach(function(m, i){
+    var ry = lblY + 198 + i * 17;
+    minRows +=
+      '<text x="'+(lblX+14)+'" y="'+ry+'" font-size="9.5" font-family="'+fontCSS+'" fill="'+th.light+'" opacity="0.9">'+esc(m.name)+'</text>'+
+      '<text x="'+(lblX+lblW-14)+'" y="'+ry+'" font-size="9.5" font-family="'+fontCSS+'" fill="'+th.acc+'" text-anchor="end">'+esc(m.amount)+'</text>';
+  });
 
-    // bottle cap
-    + '<rect x="112" y="30" width="76" height="38" rx="12" fill="#ddeeff" opacity="0.55"/>'
-    + '<rect x="118" y="36" width="64" height="26" rx="8" fill="#c8e8ff" opacity="0.7"/>'
-    // bottle neck
-    + '<path d="M112,68 Q100,90 80,130 L80,200 L220,200 L220,130 Q200,90 188,68 Z" fill="url(#bottleGrad)"/>'
-    // bottle body
-    + '<rect x="30" y="200" width="240" height="360" rx="24" fill="url(#bottleGrad)"/>'
-    // bottle shine
-    + '<rect x="48" y="210" width="18" height="330" rx="9" fill="white" opacity="0.12"/>'
-    // bottle bottom
-    + '<ellipse cx="150" cy="560" rx="120" ry="14" fill="#a0c4e0" opacity="0.18"/>'
+  // water drop icon
+  function drop(x, y, r) {
+    return '<ellipse cx="'+x+'" cy="'+(y+r*0.15)+'" rx="'+(r*0.7)+'" ry="'+(r*0.85)+'" fill="'+th.acc+'" opacity="0.9"/>'+
+           '<polygon points="'+x+','+(y-r*0.9)+' '+(x-r*0.55)+','+(y+r*0.2)+' '+(x+r*0.55)+','+(y+r*0.2)+'" fill="'+th.acc+'" opacity="0.9"/>';
+  }
 
-    // ── LABEL BACKGROUND ──
-    + '<g clip-path="url(#labelClip)">'
-    +   '<rect x="30" y="200" width="240" height="360" rx="8" fill="url(#labelGrad)"/>'
+  var svg =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" style="display:block;">' +
 
-    //  wave decoration inside label
-    +   '<path d="' + wave1 + '" fill="' + th.acc + '" opacity="0.12"/>'
-    +   '<path d="' + wave2 + '" fill="' + th.acc + '" opacity="0.08"/>'
+  '<defs>' +
 
-    //  bottom band
-    +   '<rect x="30" y="500" width="240" height="60" fill="' + th.top + '" opacity="0.6"/>'
-    + '</g>'
+  // plastic bottle surface gradient (left edge dark → bright shine → body → right shine → dark)
+  '<linearGradient id="btlG" x1="0" y1="0" x2="1" y2="0">'+
+    '<stop offset="0%"   stop-color="#8ec8e8" stop-opacity="0.7"/>'+
+    '<stop offset="7%"   stop-color="#cce8f8" stop-opacity="0.85"/>'+
+    '<stop offset="14%"  stop-color="#eef8ff" stop-opacity="0.95"/>'+
+    '<stop offset="22%"  stop-color="#b8ddf0" stop-opacity="0.65"/>'+
+    '<stop offset="50%"  stop-color="#d0ecfc" stop-opacity="0.55"/>'+
+    '<stop offset="78%"  stop-color="#b8ddf0" stop-opacity="0.62"/>'+
+    '<stop offset="88%"  stop-color="#eef8ff" stop-opacity="0.9"/>'+
+    '<stop offset="94%"  stop-color="#cce8f8" stop-opacity="0.78"/>'+
+    '<stop offset="100%" stop-color="#8ec8e8" stop-opacity="0.65"/>'+
+  '</linearGradient>' +
 
-    // ── LABEL CONTENT ──
+  // cap fill
+  '<linearGradient id="capFill" x1="0" y1="0" x2="1" y2="0">'+
+    '<stop offset="0%"   stop-color="#d8d8d8"/>'+
+    '<stop offset="20%"  stop-color="#f0f0f0"/>'+
+    '<stop offset="45%"  stop-color="#ffffff"/>'+
+    '<stop offset="65%"  stop-color="#e8e8e8"/>'+
+    '<stop offset="100%" stop-color="#c8c8c8"/>'+
+  '</linearGradient>' +
 
-    // TOP STRIP
-    + '<rect x="30" y="200" width="240" height="28" rx="0" fill="' + th.acc + '" opacity="0.22"/>'
-    + '<text x="150" y="219" font-size="10" font-family="' + fontCSS + '" fill="' + th.light + '" text-anchor="middle" letter-spacing="3" font-weight="600">' + esc(d.type.toUpperCase()) + '</text>'
+  // label gradient top→bottom
+  '<linearGradient id="lblFill" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="0%"   stop-color="'+th.top+'"/>'+
+    '<stop offset="100%" stop-color="'+th.mid+'"/>'+
+  '</linearGradient>' +
 
-    // LOGO / BRAND AREA
-    + (logo
-      ? '<image href="' + logo + '" x="105" y="232" width="90" height="45" preserveAspectRatio="xMidYMid meet"/>'
-      : (dropIcon(150, 262, 18))
-    )
+  // label wrap shadow (edges darker = cylindrical effect)
+  '<linearGradient id="lblWrap" x1="0" y1="0" x2="1" y2="0">'+
+    '<stop offset="0%"   stop-color="black" stop-opacity="0.45"/>'+
+    '<stop offset="12%"  stop-color="black" stop-opacity="0"/>'+
+    '<stop offset="88%"  stop-color="black" stop-opacity="0"/>'+
+    '<stop offset="100%" stop-color="black" stop-opacity="0.45"/>'+
+  '</linearGradient>' +
 
-    // BRAND NAME
-    + '<text x="150" y="300" font-size="30" font-family="' + fontCSS + '" fill="white" text-anchor="middle" font-weight="900" letter-spacing="1">' + esc(d.brand) + '</text>'
+  // water inside
+  '<linearGradient id="waterFill" x1="0" y1="0" x2="1" y2="0">'+
+    '<stop offset="0%"   stop-color="'+th.top+'" stop-opacity="0.28"/>'+
+    '<stop offset="50%"  stop-color="'+th.mid+'" stop-opacity="0.18"/>'+
+    '<stop offset="100%" stop-color="'+th.top+'" stop-opacity="0.25"/>'+
+  '</linearGradient>' +
 
-    // TAGLINE
-    + '<text x="150" y="318" font-size="10.5" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" letter-spacing="1.5" font-weight="600" font-style="italic">' + esc(d.tagline) + '</text>'
+  // clips
+  '<clipPath id="bClip"><path d="'+outline+'"/></clipPath>' +
+  '<clipPath id="lClip"><rect x="'+lblX+'" y="'+lblY+'" width="'+lblW+'" height="'+lblH+'" rx="3"/></clipPath>' +
 
-    // DIVIDER LINE
-    + '<line x1="60" y1="327" x2="240" y2="327" stroke="' + th.acc + '" stroke-width="0.8" opacity="0.5"/>'
+  '</defs>' +
 
-    // VOLUME BADGE
-    + '<rect x="110" y="333" width="80" height="28" rx="14" fill="' + th.acc + '" opacity="0.2"/>'
-    + '<rect x="110" y="333" width="80" height="28" rx="14" fill="none" stroke="' + th.acc + '" stroke-width="1"/>'
-    + '<text x="150" y="351" font-size="13" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" font-weight="700">' + esc(d.volume) + '</text>'
+  // ── water fill ──
+  '<g clip-path="url(#bClip)">'+
+    '<rect x="'+(cx-bodyHW)+'" y="'+(shldrBotY)+'" width="'+(bodyHW*2)+'" height="'+(botY-shldrBotY)+'" fill="url(#waterFill)"/>'+
+  '</g>'+
 
-    // pH & TDS ROW
-    + '<rect x="45" y="370" width="88" height="38" rx="7" fill="' + th.acc + '" opacity="0.12"/>'
-    + '<text x="89" y="386" font-size="9" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" font-weight="700">pH LEVEL</text>'
-    + '<text x="89" y="401" font-size="15" font-family="' + fontCSS + '" fill="white" text-anchor="middle" font-weight="700">' + esc(d.ph) + '</text>'
-    + '<rect x="167" y="370" width="88" height="38" rx="7" fill="' + th.acc + '" opacity="0.12"/>'
-    + '<text x="211" y="386" font-size="9" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" font-weight="700">TDS</text>'
-    + '<text x="211" y="401" font-size="11" font-family="' + fontCSS + '" fill="white" text-anchor="middle" font-weight="700">' + esc(d.tds) + '</text>'
+  // ── LABEL (drawn first, glass goes on top) ──
+  '<g clip-path="url(#lClip)">'+
+    '<rect x="'+lblX+'" y="'+lblY+'" width="'+lblW+'" height="'+lblH+'" fill="url(#lblFill)"/>'+
+    // top type strip
+    '<rect x="'+lblX+'" y="'+lblY+'" width="'+lblW+'" height="25" fill="'+th.acc+'" opacity="0.2"/>'+
+    '<text x="'+cx+'" y="'+(lblY+16)+'" font-size="9.5" font-family="'+fontCSS+'" fill="'+th.light+'" text-anchor="middle" letter-spacing="3" font-weight="700" opacity="0.9">'+esc(d.type.toUpperCase())+'</text>'+
+    // logo or drop
+    (logo
+      ? '<image href="'+logo+'" x="'+(cx-35)+'" y="'+(lblY+28)+'" width="70" height="38" preserveAspectRatio="xMidYMid meet"/>'
+      : drop(cx, lblY+52, 18)
+    )+
+    // brand
+    '<text x="'+cx+'" y="'+(lblY+92)+'" font-size="29" font-family="'+fontCSS+'" fill="white" text-anchor="middle" font-weight="900" letter-spacing="1">'+esc(d.brand)+'</text>'+
+    // tagline
+    '<text x="'+cx+'" y="'+(lblY+108)+'" font-size="10" font-family="'+fontCSS+'" fill="'+th.acc+'" text-anchor="middle" letter-spacing="1.5" font-weight="600" font-style="italic">'+esc(d.tagline)+'</text>'+
+    // divider
+    '<line x1="'+(lblX+18)+'" y1="'+(lblY+115)+'" x2="'+(lblX+lblW-18)+'" y2="'+(lblY+115)+'" stroke="'+th.acc+'" stroke-width="0.7" opacity="0.45"/>'+
+    // volume badge
+    '<rect x="'+(cx-40)+'" y="'+(lblY+121)+'" width="80" height="26" rx="13" fill="none" stroke="'+th.acc+'" stroke-width="1.2"/>'+
+    '<text x="'+cx+'" y="'+(lblY+138)+'" font-size="13" font-family="'+fontCSS+'" fill="'+th.acc+'" text-anchor="middle" font-weight="700">'+esc(d.volume)+'</text>'+
+    // pH box
+    '<rect x="'+(lblX+12)+'" y="'+(lblY+156)+'" width="'+(lblW/2-18)+'" height="38" rx="6" fill="'+th.acc+'" opacity="0.14"/>'+
+    '<text x="'+(lblX+12+(lblW/2-18)/2)+'" y="'+(lblY+169)+'" font-size="8" font-family="'+fontCSS+'" fill="'+th.acc+'" text-anchor="middle" font-weight="700" letter-spacing="1">pH LEVEL</text>'+
+    '<text x="'+(lblX+12+(lblW/2-18)/2)+'" y="'+(lblY+187)+'" font-size="15" font-family="'+fontCSS+'" fill="white" text-anchor="middle" font-weight="700">'+esc(d.ph)+'</text>'+
+    // TDS box
+    '<rect x="'+(cx+6)+'" y="'+(lblY+156)+'" width="'+(lblW/2-18)+'" height="38" rx="6" fill="'+th.acc+'" opacity="0.14"/>'+
+    '<text x="'+(cx+6+(lblW/2-18)/2)+'" y="'+(lblY+169)+'" font-size="8" font-family="'+fontCSS+'" fill="'+th.acc+'" text-anchor="middle" font-weight="700" letter-spacing="1">TDS</text>'+
+    '<text x="'+(cx+6+(lblW/2-18)/2)+'" y="'+(lblY+187)+'" font-size="11" font-family="'+fontCSS+'" fill="white" text-anchor="middle" font-weight="700">'+esc(d.tds)+'</text>'+
+    // mineral heading
+    '<text x="'+cx+'" y="'+(lblY+208)+'" font-size="8.5" font-family="'+fontCSS+'" fill="'+th.acc+'" text-anchor="middle" letter-spacing="2" font-weight="700">MINERAL ANALYSIS</text>'+
+    '<line x1="'+(lblX+12)+'" y1="'+(lblY+212)+'" x2="'+(lblX+lblW-12)+'" y2="'+(lblY+212)+'" stroke="'+th.acc+'" stroke-width="0.5" opacity="0.4"/>'+
+    minRows+
+    // bottom band
+    '<rect x="'+lblX+'" y="'+(lblY+lblH-56)+'" width="'+lblW+'" height="56" fill="'+th.top+'" opacity="0.55"/>'+
+    '<text x="'+cx+'" y="'+(lblY+lblH-40)+'" font-size="8" font-family="'+fontCSS+'" fill="'+th.acc+'" text-anchor="middle" letter-spacing="1">'+esc(d.source)+'</text>'+
+    '<text x="'+cx+'" y="'+(lblY+lblH-25)+'" font-size="7.5" font-family="'+fontCSS+'" fill="'+th.light+'" text-anchor="middle" opacity="0.75">'+esc(d.website)+'</text>'+
+    '<text x="'+cx+'" y="'+(lblY+lblH-11)+'" font-size="6.5" font-family="'+fontCSS+'" fill="'+th.light+'" text-anchor="middle" opacity="0.55">Batch: '+esc(d.batch)+' | Mfg: '+esc(d.mfgdate)+' | Best Before: '+esc(d.expdate)+'</text>'+
+    // cylindrical wrap shadow overlay on label
+    '<rect x="'+lblX+'" y="'+lblY+'" width="'+lblW+'" height="'+lblH+'" fill="url(#lblWrap)"/>'+
+  '</g>'+
 
-    // MINERAL ANALYSIS TITLE
-    + '<text x="150" y="422" font-size="9" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" letter-spacing="2" font-weight="700">MINERAL ANALYSIS</text>'
-    + '<line x1="60" y1="425" x2="240" y2="425" stroke="' + th.acc + '" stroke-width="0.5" opacity="0.4"/>'
+  // ── GLASS BOTTLE SURFACE (on top of everything, semi-transparent) ──
+  '<g clip-path="url(#bClip)">'+
+    '<path d="'+outline+'" fill="url(#btlG)"/>'+
+    // bright left shine strip (main)
+    '<rect x="'+(cx-bodyHW+6)+'" y="'+(shldrBotY-20)+'" width="10" height="'+(botY-shldrBotY)+'" rx="5" fill="white" opacity="0.28"/>'+
+    // secondary thin shine left
+    '<rect x="'+(cx-bodyHW+22)+'" y="'+(lblTopY+10)+'" width="4" height="'+(botY-lblTopY-30)+'" rx="2" fill="white" opacity="0.12"/>'+
+    // right shine
+    '<rect x="'+(cx+bodyHW-18)+'" y="'+(lblTopY+10)+'" width="7" height="'+(botY-lblTopY-30)+'" rx="3.5" fill="white" opacity="0.15"/>'+
+    // neck left shine
+    '<rect x="'+(cx-neckTopHW+3)+'" y="'+(capBotY+8)+'" width="6" height="'+(neckBotY-capBotY-12)+'" rx="3" fill="white" opacity="0.22"/>'+
+    // grip ridge shading (horizontal shadows baked into glass layer)
+    ridgeLines+
+  '</g>'+
 
-    // MINERAL ROWS
-    + minRows
+  // ── BOTTLE OUTLINE ──
+  '<path d="'+outline+'" fill="none" stroke="rgba(100,170,210,0.5)" stroke-width="1"/>'+
 
-    // BOTTOM BAND CONTENT
-    + '<text x="150" y="518" font-size="8.5" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" letter-spacing="1">' + esc(d.source) + '</text>'
-    + '<text x="150" y="533" font-size="8" font-family="' + fontCSS + '" fill="' + th.light + '" text-anchor="middle" opacity="0.7">' + esc(d.website) + '</text>'
-    + '<text x="150" y="548" font-size="7.5" font-family="' + fontCSS + '" fill="' + th.light + '" text-anchor="middle" opacity="0.6">Batch: ' + esc(d.batch) + ' | Mfg: ' + esc(d.mfgdate) + ' | Best Before: ' + esc(d.expdate) + '</text>'
+  // ── CAP ──
+  // cap body (round-top rect matching Pure Life white cap)
+  '<rect x="'+(cx-capHW)+'" y="'+capTopY+'" width="'+(capHW*2)+'" height="'+(capBotY-capTopY)+'" rx="'+(capHW)+'" fill="url(#capFill)"/>'+
+  // thread ring at cap base
+  '<rect x="'+(cx-capHW)+'" y="'+(capBotY-8)+'" width="'+(capHW*2)+'" height="5" rx="2" fill="rgba(180,180,180,0.7)"/>'+
+  // cap shine
+  '<rect x="'+(cx-capHW+6)+'" y="'+(capTopY+5)+'" width="9" height="'+(capBotY-capTopY-10)+'" rx="4.5" fill="white" opacity="0.4"/>'+
+  // cap outline
+  '<rect x="'+(cx-capHW)+'" y="'+capTopY+'" width="'+(capHW*2)+'" height="'+(capBotY-capTopY)+'" rx="'+(capHW)+'" fill="none" stroke="rgba(160,160,160,0.5)" stroke-width="0.8"/>'+
 
-    // BORDER around label
-    + '<rect x="30" y="200" width="240" height="360" rx="24" fill="none" stroke="' + th.acc + '" stroke-width="0.8" opacity="0.35"/>'
+  // ── SHOULDER / NECK connection line ──
+  '<line x1="'+(cx-neckBotHW)+'" y1="'+neckBotY+'" x2="'+(cx+neckBotHW)+'" y2="'+neckBotY+'" stroke="rgba(120,180,220,0.3)" stroke-width="1"/>'+
 
-    // RECYCLING + company text at bottom
-    + '<text x="150" y="590" font-size="8" font-family="' + fontCSS + '" fill="#90b8d8" text-anchor="middle" opacity="0.7">' + esc(d.company) + '</text>'
-    + '<text x="150" y="603" font-size="7.5" font-family="' + fontCSS + '" fill="#90b8d8" text-anchor="middle" opacity="0.5">' + esc(d.address) + '</text>'
+  // ── bottom ellipse ──
+  '<ellipse cx="'+cx+'" cy="'+botY+'" rx="'+(botHW*0.85)+'" ry="7" fill="rgba(100,160,200,0.25)"/>'+
+  // floor shadow
+  '<ellipse cx="'+cx+'" cy="'+(botY+16)+'" rx="'+(botHW*0.7)+'" ry="9" fill="rgba(0,0,0,0.22)"/>'+
 
-    + '</svg>';
+  // ── company text below ──
+  '<text x="'+cx+'" y="'+(botY+38)+'" font-size="8.5" font-family="'+fontCSS+'" fill="rgba(160,205,230,0.7)" text-anchor="middle">'+esc(d.company)+'</text>'+
+  '<text x="'+cx+'" y="'+(botY+51)+'" font-size="7.5" font-family="'+fontCSS+'" fill="rgba(160,205,230,0.45)" text-anchor="middle">'+esc(d.address)+'</text>'+
 
-  return '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;">'
-    + svg
-    // Flat label strip view
-    + '<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 16px;text-align:center;">'
-    + '<div style="font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:2px;margin-bottom:8px;">FLAT LABEL VIEW</div>'
-    + buildFlatLabel(d, th, fontCSS, logo)
-    + '</div>'
-    + '</div>';
+  '</svg>';
+
+  return '<div style="display:flex;flex-direction:column;align-items:center;gap:22px;">'+
+    svg+
+    '<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 16px;text-align:center;">'+
+      '<div style="font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:2px;margin-bottom:8px;">FLAT LABEL VIEW</div>'+
+      buildFlatLabel(d, th, fontCSS, logo)+
+    '</div>'+
+  '</div>';
 }
 
 // ─────────────────────────────────────────────────────────────────
