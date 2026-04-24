@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Water Bottle Label Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Cinzel:wght@700&family=DM+Sans:wght@300;400;500;600&family=Montserrat:wght@400;600;700&family=Raleway:wght@400;600;700&family=Oswald:wght@400;600;700&family=Lora:wght@400;600;700&family=Bebas+Neue&family=Nunito:wght@400;600;700&family=Poppins:wght@400;600;700&family=Dancing+Script:wght@700&family=Abril+Fatface&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f0f6fb; --white:#fff; --border:#dde8f0;
+  --blue:#0077cc; --blue-light:#e3f2fc;
+  --teal:#00a89d; --teal-light:#e0f7f6;
+  --text:#1a2a33; --muted:#6b8a99;
+  --red:#c0392b;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* TOP BAR */
+.topbar{background:linear-gradient(90deg,#004e8c,#0077cc,#00a89d);padding:0 28px;height:54px;display:flex;align-items:center;justify-content:space-between;}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.topbar h1{font-family:'Cinzel',serif;font-size:15px;color:#fff;letter-spacing:2px;}
+.topbar-tag{font-size:10px;color:rgba(255,255,255,0.55);letter-spacing:1px;background:rgba(255,255,255,0.12);padding:3px 10px;border-radius:20px;}
+.add-btn{padding:8px 18px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.4);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:#fff;cursor:pointer;transition:background .15s;}
+.add-btn:hover{background:rgba(255,255,255,0.3);}
+
+/* TABS */
+.tabs-bar{background:var(--white);border-bottom:2px solid var(--border);padding:0 28px;display:flex;align-items:flex-end;gap:4px;overflow-x:auto;}
+.tab{padding:10px 18px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;display:flex;align-items:center;gap:8px;transition:color .2s,border-color .2s;user-select:none;}
+.tab:hover{color:var(--blue);}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600;}
+.tab-close{font-size:15px;color:var(--muted);line-height:1;padding:0 2px;border-radius:50%;transition:background .15s,color .15s;}
+.tab-close:hover{background:#fde8e8;color:var(--red);}
+
+/* PANELS */
+.design-panels{display:none;}
+.design-panels.active{display:flex;height:calc(100vh - 54px - 46px);}
+
+/* FORM SIDE */
+.form-side{width:480px;min-width:480px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.form-header{padding:16px 24px 12px;border-bottom:1px solid var(--border);}
+.design-name-input{font-size:15px;font-weight:600;border:none;outline:none;color:var(--text);font-family:'DM Sans',sans-serif;background:transparent;width:100%;border-bottom:2px solid transparent;transition:border-color .2s;}
+.design-name-input:focus{border-bottom-color:var(--blue);}
+.form-scroll{flex:1;overflow-y:auto;padding:16px 24px 90px;}
+
+/* FIELDS */
+.fg{display:grid;gap:10px;margin-bottom:10px;}
+.fg-2{grid-template-columns:1fr 1fr;}
+.fg-1{grid-template-columns:1fr;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:0.8px;text-transform:uppercase;}
+.field input,.field textarea,.field select{padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12.5px;color:var(--text);background:#fff;transition:border-color .2s;resize:vertical;}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,119,204,0.08);}
+.field textarea{min-height:56px;}
+.sec-title{font-size:11px;font-weight:700;color:var(--blue);letter-spacing:1.5px;text-transform:uppercase;margin:18px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--blue-light);}
+.ing-group{display:flex;flex-direction:column;gap:6px;}
+.ing-row{display:flex;gap:6px;align-items:center;}
+.ing-row input:first-child{flex:2;}
+.ing-row input:last-child{flex:1;}
+.ing-del{width:24px;height:24px;border:none;border-radius:50%;background:#fde8e8;color:var(--red);font-size:15px;cursor:pointer;flex-shrink:0;}
+.ing-del:hover{background:#f5b7b1;}
+.add-ing-btn{margin-top:6px;padding:6px 12px;background:var(--blue-light);border:1px solid #b0d4ee;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;color:var(--blue);cursor:pointer;}
+.add-ing-btn:hover{background:#c8e6f8;}
+
+/* COLOR THEME SELECTOR */
+.color-themes{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:6px;}
+.color-swatch{height:36px;border-radius:7px;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;}
+.color-swatch:hover{transform:scale(1.08);}
+.color-swatch.selected{border-color:#fff;box-shadow:0 0 0 2px var(--blue);}
+
+/* LOGO UPLOAD */
+.logo-upload-area{border:2px dashed var(--border);border-radius:8px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:border-color .2s,background .2s;position:relative;}
+.logo-upload-area:hover{border-color:var(--blue);background:var(--blue-light);}
+.logo-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.logo-preview-img{max-width:110px;max-height:55px;object-fit:contain;border-radius:4px;display:none;}
+.logo-preview-img.has-logo{display:block;}
+.logo-placeholder{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.logo-placeholder-icon{font-size:26px;}
+.logo-placeholder-text{font-size:11px;color:var(--muted);text-align:center;}
+.logo-clear-btn{padding:4px 10px;background:#fde8e8;color:var(--red);border:none;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;z-index:1;margin-top:4px;}
+.logo-filename{font-size:10px;color:var(--blue);font-weight:600;}
+
+/* FONT GRID */
+.font-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px;}
+.font-option{border:2px solid var(--border);border-radius:7px;padding:10px 8px 7px;cursor:pointer;transition:border-color .2s,background .2s;text-align:center;}
+.font-option:hover{border-color:var(--blue);background:var(--blue-light);}
+.font-option.selected{border-color:var(--blue);background:var(--blue-light);}
+.font-sample{font-size:16px;color:var(--text);line-height:1.2;margin-bottom:3px;}
+.font-label{font-size:9px;color:var(--muted);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;}
+
+/* FORM FOOTER */
+.form-footer{position:sticky;bottom:0;background:var(--white);border-top:1px solid var(--border);padding:12px 24px;display:flex;gap:10px;}
+.fbtn{flex:1;padding:10px;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+.fbtn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.12);}
+.fbtn:active{transform:scale(.98);}
+.fbtn-blue{background:var(--blue);color:#fff;}
+.fbtn-teal{background:linear-gradient(90deg,#007a9e,#00a89d);color:#fff;}
+
+/* PREVIEW SIDE */
+.preview-side{flex:1;background:linear-gradient(160deg,#0a1e2e 0%,#0d2b3a 50%,#0a2233 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;overflow:auto;gap:24px;}
+.preview-tag{font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:2px;text-transform:uppercase;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <h1>WATER BOTTLE LABEL EDITOR</h1>
+    <span class="topbar-tag">Label Design Studio</span>
+  </div>
+  <button class="add-btn" onclick="addNewDesign()">+ Add New Design</button>
+</div>
+
+<div class="tabs-bar" id="tabsBar"></div>
+<div id="designsRoot"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────
+// FONTS
+// ─────────────────────────────────────────────────────────────────
+var FONTS = [
+  {key:'playfair',  label:'Playfair',     css:"'Playfair Display',serif",  sample:'AquaPure'},
+  {key:'cinzel',    label:'Cinzel',       css:"'Cinzel',serif",            sample:'AquaPure'},
+  {key:'montserrat',label:'Montserrat',   css:"'Montserrat',sans-serif",   sample:'AquaPure'},
+  {key:'raleway',   label:'Raleway',      css:"'Raleway',sans-serif",      sample:'AquaPure'},
+  {key:'oswald',    label:'Oswald',       css:"'Oswald',sans-serif",       sample:'AquaPure'},
+  {key:'lora',      label:'Lora',         css:"'Lora',serif",              sample:'AquaPure'},
+  {key:'bebas',     label:'Bebas Neue',   css:"'Bebas Neue',sans-serif",   sample:'AquaPure'},
+  {key:'nunito',    label:'Nunito',       css:"'Nunito',sans-serif",       sample:'AquaPure'},
+  {key:'poppins',   label:'Poppins',      css:"'Poppins',sans-serif",      sample:'AquaPure'},
+  {key:'dancing',   label:'Dancing',      css:"'Dancing Script',cursive",  sample:'AquaPure'},
+  {key:'abril',     label:'Abril',        css:"'Abril Fatface',serif",     sample:'AquaPure'},
+  {key:'dmsans',    label:'DM Sans',      css:"'DM Sans',sans-serif",      sample:'AquaPure'}
+];
+
+// ─────────────────────────────────────────────────────────────────
+// COLOR THEMES (top, mid, accent)
+// ─────────────────────────────────────────────────────────────────
+var THEMES = [
+  {key:'ocean',   label:'Ocean',   top:'#003f7f', mid:'#0077cc', acc:'#00c8e0', txt:'#ffffff', light:'#e0f4ff'},
+  {key:'forest',  label:'Forest',  top:'#1a4a1a', mid:'#2e8b57', acc:'#7ddc8c', txt:'#ffffff', light:'#e8f7ec'},
+  {key:'glacier', label:'Glacier', top:'#1a2e4a', mid:'#4a90c4', acc:'#a8d8f0', txt:'#ffffff', light:'#e8f4fc'},
+  {key:'sunset',  label:'Sunset',  top:'#7b1e1e', mid:'#d4522a', acc:'#f9a84c', txt:'#ffffff', light:'#fff3e0'},
+  {key:'purple',  label:'Purple',  top:'#2d1a5a', mid:'#6a3fb5', acc:'#c084fc', txt:'#ffffff', light:'#f3e8ff'},
+  {key:'teal',    label:'Teal',    top:'#00464a', mid:'#00897b', acc:'#4dd0c4', txt:'#ffffff', light:'#e0faf7'},
+  {key:'black',   label:'Black',   top:'#0a0a0a', mid:'#222222', acc:'#c9a84c', txt:'#ffffff', light:'#f5f5f5'},
+  {key:'sky',     label:'Sky',     top:'#1565c0', mid:'#42a5f5', acc:'#e1f5fe', txt:'#ffffff', light:'#e8f4fd'},
+  {key:'rose',    label:'Rose',    top:'#6b0e35', mid:'#c2185b', acc:'#f48fb1', txt:'#ffffff', light:'#fce4ec'},
+  {key:'gold',    label:'Gold',    top:'#4a3000', mid:'#b8860b', acc:'#ffd700', txt:'#ffffff', light:'#fffde7'}
+];
+
+// ─────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────
+var designs  = [];
+var activeId = null;
+var nextId   = 1;
+var logoData = {};
+
+// ─────────────────────────────────────────────────────────────────
+// DEFAULT DATA
+// ─────────────────────────────────────────────────────────────────
+function defaultData() {
+  return {
+    name:     'Design ' + nextId,
+    brand:    'AquaPure',
+    tagline:  'Nature\'s Finest Water',
+    volume:   '500 ml',
+    type:     'Natural Spring Water',
+    source:   'Mountain Spring, Canada',
+    ph:       '7.4',
+    tds:      '85 mg/L',
+    website:  'www.aquapure.com',
+    batch:    'BT-2026-001',
+    mfgdate:  'April 2026',
+    expdate:  'April 2028',
+    company:  'AquaPure Beverages Ltd.',
+    address:  '100 Spring Valley Rd, Calgary, AB, Canada',
+    minerals: [
+      {name:'Calcium (Ca²⁺)',   amount:'28 mg/L'},
+      {name:'Magnesium (Mg²⁺)', amount:'12 mg/L'},
+      {name:'Sodium (Na⁺)',     amount:'8 mg/L'},
+      {name:'Potassium (K⁺)',   amount:'3 mg/L'},
+      {name:'Bicarbonate',      amount:'95 mg/L'},
+      {name:'Sulfate',          amount:'14 mg/L'}
+    ],
+    fontKey:  'raleway',
+    themeKey: 'ocean'
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ADD / REMOVE / SWITCH
+// ─────────────────────────────────────────────────────────────────
+function addNewDesign(custom) {
+  var id   = nextId++;
+  var data = custom || defaultData();
+  data.name = data.name || ('Design ' + id);
+  designs.push({id:id, name:data.name, data:data});
+  logoData[id] = (custom && custom._logo) ? custom._logo : null;
+  renderTabsBar();
+  renderAllPanels();
+  switchToDesign(id);
+}
+
+function removeDesign(id) {
+  if (designs.length <= 1) return;
+  designs = designs.filter(function(d){ return d.id !== id; });
+  delete logoData[id];
+  if (activeId === id) activeId = designs[0].id;
+  renderTabsBar();
+  renderAllPanels();
+  switchToDesign(activeId);
+}
+
+function switchToDesign(id) {
+  activeId = id;
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.classList.toggle('active', parseInt(t.dataset.id) === id);
+  });
+  document.querySelectorAll('.design-panels').forEach(function(p){
+    p.classList.toggle('active', parseInt(p.dataset.id) === id);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// RENDER TABS
+// ─────────────────────────────────────────────────────────────────
+function renderTabsBar() {
+  var bar = document.getElementById('tabsBar');
+  bar.innerHTML = '';
+  designs.forEach(function(d) {
+    var tab = document.createElement('div');
+    tab.className = 'tab' + (d.id === activeId ? ' active' : '');
+    tab.dataset.id = d.id;
+    tab.innerHTML = '<span class="tab-name">' + esc(d.name) + '</span>'
+      + (designs.length > 1 ? '<span class="tab-close" onclick="event.stopPropagation();removeDesign(' + d.id + ')">&#215;</span>' : '');
+    tab.addEventListener('click', function(){ switchToDesign(d.id); });
+    bar.appendChild(tab);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// RENDER ALL PANELS
+// ─────────────────────────────────────────────────────────────────
+function renderAllPanels() {
+  var root = document.getElementById('designsRoot');
+  root.innerHTML = '';
+  designs.forEach(function(d){ root.appendChild(buildPanel(d)); });
+}
+
+function buildPanel(design) {
+  var id = design.id, d = design.data;
+  var wrapper = document.createElement('div');
+  wrapper.className = 'design-panels' + (id === activeId ? ' active' : '');
+  wrapper.dataset.id = id;
+
+  var formSide = document.createElement('div');
+  formSide.className = 'form-side';
+  formSide.innerHTML = buildFormHTML(id, d);
+
+  var previewSide = document.createElement('div');
+  previewSide.className = 'preview-side';
+  previewSide.innerHTML =
+    '<div class="preview-tag" id="ptag_' + id + '">Live Preview — ' + esc(d.name) + '</div>'
+    + '<div id="preview_' + id + '"></div>';
+
+  wrapper.appendChild(formSide);
+  wrapper.appendChild(previewSide);
+  return wrapper;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// FORM HTML
+// ─────────────────────────────────────────────────────────────────
+function buildFormHTML(id, d) {
+  // minerals
+  var mins = '';
+  (d.minerals||[]).forEach(function(m){ mins += minRowHTML(id, m.name, m.amount); });
+
+  // font options
+  var fontOpts = '';
+  FONTS.forEach(function(f){
+    var sel = (d.fontKey === f.key) ? ' selected' : '';
+    fontOpts += '<div class="font-option' + sel + '" data-font="' + f.key + '" onclick="selectFont(' + id + ',\'' + f.key + '\',this)">'
+      + '<div class="font-sample" style="font-family:' + f.css + ';">' + f.sample + '</div>'
+      + '<div class="font-label">' + f.label + '</div>'
+      + '</div>';
+  });
+
+  // color theme swatches
+  var swatches = '';
+  THEMES.forEach(function(t){
+    var sel = (d.themeKey === t.key) ? ' selected' : '';
+    swatches += '<div class="color-swatch' + sel + '" data-theme="' + t.key + '" title="' + t.label + '"'
+      + ' style="background:linear-gradient(135deg,' + t.top + ',' + t.mid + ');"'
+      + ' onclick="selectTheme(' + id + ',\'' + t.key + '\',this)">'
+      + '<span style="font-size:9px;font-weight:700;">' + t.label + '</span>'
+      + '</div>';
+  });
+
+  var logoHasClass = logoData[id] ? ' has-logo' : '';
+  var logoSrc      = logoData[id] ? logoData[id] : '';
+
+  return '<div class="form-header">'
+    + '<input class="design-name-input" id="name_' + id + '" value="' + esc(d.name) + '" oninput="onNameChange(' + id + ')" placeholder="Design name">'
+    + '</div>'
+    + '<div class="form-scroll">'
+
+    // Basic
+    + '<div class="fg fg-2">'
+    + fi('Brand Name',   'brand_'  +id, d.brand)
+    + fi('Tagline',      'tagline_'+id, d.tagline)
+    + '</div>'
+    + '<div class="fg fg-2">'
+    + fi('Volume',       'volume_' +id, d.volume)
+    + fi('Water Type',   'type_'   +id, d.type)
+    + '</div>'
+    + '<div class="fg fg-2">'
+    + fi('Source',       'source_' +id, d.source)
+    + fi('pH Level',     'ph_'     +id, d.ph)
+    + '</div>'
+    + '<div class="fg fg-2">'
+    + fi('TDS',          'tds_'    +id, d.tds)
+    + fi('Website',      'website_'+id, d.website)
+    + '</div>'
+    + '<div class="fg fg-2">'
+    + fi('Batch No.',    'batch_'  +id, d.batch)
+    + fi('Mfg. Date',   'mfgdate_'+id, d.mfgdate)
+    + '</div>'
+    + '<div class="fg fg-2">'
+    + fi('Best Before',  'expdate_'+id, d.expdate)
+    + fi('Company',      'company_'+id, d.company)
+    + '</div>'
+    + '<div class="fg fg-1">'
+    + fi('Address',      'address_'+id, d.address)
+    + '</div>'
+
+    // Logo
+    + '<div class="sec-title">Logo</div>'
+    + '<div class="logo-upload-area" id="logoArea_' + id + '" onclick="triggerLogoInput(' + id + ')">'
+    +   '<input type="file" id="logoInput_' + id + '" accept="image/*" onchange="onLogoChange(' + id + ',event)" style="display:none;">'
+    +   '<img id="logoImg_' + id + '" src="' + logoSrc + '" class="logo-preview-img' + logoHasClass + '" alt="Logo">'
+    +   '<div class="logo-placeholder" id="logoPlaceholder_' + id + '" style="' + (logoData[id]?'display:none;':'') + '">'
+    +     '<div class="logo-placeholder-icon">🖼️</div>'
+    +     '<div class="logo-placeholder-text">Click to upload logo<br><small>PNG · JPG · SVG</small></div>'
+    +   '</div>'
+    +   '<div class="logo-filename" id="logoName_' + id + '">' + (logoData[id]?'Logo uploaded ✓':'') + '</div>'
+    + '</div>'
+    + '<span id="logoClearBtn_' + id + '">'
+    + (logoData[id] ? '<button class="logo-clear-btn" onclick="clearLogo(' + id + ')">✕ Remove Logo</button>' : '')
+    + '</span>'
+
+    // Color Theme
+    + '<div class="sec-title">Label Color Theme</div>'
+    + '<div class="color-themes">' + swatches + '</div>'
+
+    // Font
+    + '<div class="sec-title">Brand Font</div>'
+    + '<div class="font-grid" id="fontGrid_' + id + '">' + fontOpts + '</div>'
+
+    // Minerals
+    + '<div class="sec-title">Mineral Analysis</div>'
+    + '<div class="ing-group" id="minGroup_' + id + '">' + mins + '</div>'
+    + '<button class="add-ing-btn" onclick="addMinRow(' + id + ')">+ Add Mineral</button>'
+
+    + '</div>'
+
+    + '<div class="form-footer">'
+    +   '<button class="fbtn fbtn-blue" onclick="liveUpdate(' + id + ')">&#9654; Update Preview</button>'
+    +   '<button class="fbtn fbtn-teal" onclick="downloadDesign(' + id + ')">&#11015; Download HTML</button>'
+    + '</div>';
+}
+
+function fi(label, fid, value) {
+  var id = fid.split('_').pop();
+  return '<div class="field"><label>' + label + '</label>'
+    + '<input id="' + fid + '" value="' + esc(value) + '" oninput="liveUpdate(' + id + ')">'
+    + '</div>';
+}
+function minRowHTML(designId, name, amount) {
+  return '<div class="ing-row">'
+    + '<input placeholder="Mineral name" value="' + esc(name) + '" oninput="liveUpdate(' + designId + ')">'
+    + '<input placeholder="Amount" value="' + esc(amount) + '" oninput="liveUpdate(' + designId + ')">'
+    + '<button class="ing-del" onclick="this.parentElement.remove();liveUpdate(' + designId + ')">&#215;</button>'
+    + '</div>';
+}
+
+// ─────────────────────────────────────────────────────────────────
+// LOGO HANDLERS
+// ─────────────────────────────────────────────────────────────────
+function triggerLogoInput(id) { document.getElementById('logoInput_' + id).click(); }
+
+function onLogoChange(id, event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    logoData[id] = e.target.result;
+    var img = document.getElementById('logoImg_' + id);
+    img.src = e.target.result; img.classList.add('has-logo');
+    document.getElementById('logoPlaceholder_' + id).style.display = 'none';
+    document.getElementById('logoName_' + id).textContent = '✓ ' + file.name;
+    var cb = document.getElementById('logoClearBtn_' + id);
+    if (cb) cb.innerHTML = '<button class="logo-clear-btn" onclick="clearLogo(' + id + ')">✕ Remove Logo</button>';
+    liveUpdate(id);
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearLogo(id) {
+  logoData[id] = null;
+  var img = document.getElementById('logoImg_' + id);
+  if (img) { img.src=''; img.classList.remove('has-logo'); }
+  var ph = document.getElementById('logoPlaceholder_' + id);
+  if (ph) ph.style.display = 'flex';
+  var nm = document.getElementById('logoName_' + id);
+  if (nm) nm.textContent = '';
+  var inp = document.getElementById('logoInput_' + id);
+  if (inp) inp.value = '';
+  var cb = document.getElementById('logoClearBtn_' + id);
+  if (cb) cb.innerHTML = '';
+  liveUpdate(id);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// FONT & THEME SELECTION
+// ─────────────────────────────────────────────────────────────────
+function selectFont(id, fontKey, el) {
+  document.querySelectorAll('#fontGrid_' + id + ' .font-option').forEach(function(o){ o.classList.remove('selected'); });
+  el.classList.add('selected');
+  var design = designs.find(function(d){ return d.id === id; });
+  if (design) design.data.fontKey = fontKey;
+  liveUpdate(id);
+}
+
+function selectTheme(id, themeKey, el) {
+  el.closest('.color-themes').querySelectorAll('.color-swatch').forEach(function(s){ s.classList.remove('selected'); });
+  el.classList.add('selected');
+  var design = designs.find(function(d){ return d.id === id; });
+  if (design) design.data.themeKey = themeKey;
+  liveUpdate(id);
+}
+
+function getFontCSS(key) {
+  var f = FONTS.find(function(x){ return x.key === key; });
+  return f ? f.css : "'Raleway',sans-serif";
+}
+function getTheme(key) {
+  return THEMES.find(function(t){ return t.key === key; }) || THEMES[0];
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ADD MINERAL ROW
+// ─────────────────────────────────────────────────────────────────
+function addMinRow(id) {
+  var g = document.getElementById('minGroup_' + id);
+  var div = document.createElement('div');
+  div.innerHTML = minRowHTML(id, '', '');
+  g.appendChild(div.firstChild);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// NAME CHANGE
+// ─────────────────────────────────────────────────────────────────
+function onNameChange(id) {
+  var val = document.getElementById('name_' + id).value;
+  var design = designs.find(function(d){ return d.id === id; });
+  if (design) design.name = val;
+  var tn = document.querySelector('.tab[data-id="' + id + '"] .tab-name');
+  if (tn) tn.textContent = val;
+  var pt = document.getElementById('ptag_' + id);
+  if (pt) pt.textContent = 'Live Preview — ' + val;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// COLLECT DATA
+// ─────────────────────────────────────────────────────────────────
+function collectData(id) {
+  function v(p) { var el = document.getElementById(p + '_' + id); return el ? el.value.trim() : ''; }
+  var mins = [];
+  document.querySelectorAll('#minGroup_' + id + ' .ing-row').forEach(function(row){
+    var inputs = row.querySelectorAll('input');
+    if (inputs[0] && inputs[0].value.trim())
+      mins.push({name: inputs[0].value.trim(), amount: inputs[1] ? inputs[1].value.trim() : ''});
+  });
+  var selFont  = document.querySelector('#fontGrid_' + id + ' .font-option.selected');
+  var selTheme = document.querySelector('#colorThemes_' + id + ' .color-swatch.selected') ||
+                 document.querySelector('[data-theme].selected');
+  var fontKey  = selFont  ? selFont.dataset.font   : (designs.find(function(d){ return d.id===id; })||{data:{}}).data.fontKey  || 'raleway';
+  var themeKey = selTheme ? selTheme.dataset.theme  : (designs.find(function(d){ return d.id===id; })||{data:{}}).data.themeKey || 'ocean';
+  return {
+    name:v('name'), brand:v('brand'), tagline:v('tagline'),
+    volume:v('volume'), type:v('type'), source:v('source'),
+    ph:v('ph'), tds:v('tds'), website:v('website'),
+    batch:v('batch'), mfgdate:v('mfgdate'), expdate:v('expdate'),
+    company:v('company'), address:v('address'),
+    fontKey:fontKey, themeKey:themeKey,
+    minerals:mins, _logo:logoData[id]||null
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────
+// LIVE UPDATE
+// ─────────────────────────────────────────────────────────────────
+function liveUpdate(id) {
+  var container = document.getElementById('preview_' + id);
+  if (!container) return;
+  container.innerHTML = buildBottleHTML(collectData(id));
+}
+
+// ─────────────────────────────────────────────────────────────────
+// BUILD BOTTLE SVG
+// ─────────────────────────────────────────────────────────────────
+function buildBottleHTML(d) {
+  var th       = getTheme(d.themeKey);
+  var fontCSS  = getFontCSS(d.fontKey);
+  var logo     = d._logo;
+  var W        = 300;
+  var H        = 640;
+
+  // Minerals list
+  var minRows = '';
+  (d.minerals||[]).slice(0,8).forEach(function(m, i){
+    var y = 430 + i * 16;
+    minRows += '<text x="90" y="' + y + '" font-size="9.5" fill="' + th.light + '" opacity="0.9">' + esc(m.name) + '</text>'
+      + '<text x="210" y="' + y + '" font-size="9.5" fill="' + th.acc + '" text-anchor="end">' + esc(m.amount) + '</text>';
+  });
+
+  // Wave paths
+  var wave1 = 'M0,260 Q40,240 80,260 Q120,280 160,260 Q200,240 240,260 Q280,280 300,260 L300,300 L0,300 Z';
+  var wave2 = 'M0,270 Q50,255 100,270 Q150,285 200,270 Q250,255 300,270 L300,300 L0,300 Z';
+
+  // Drop icon path (simple water drop)
+  function dropIcon(cx, cy, r) {
+    return '<ellipse cx="' + cx + '" cy="' + (cy+r*0.2) + '" rx="' + (r*0.7) + '" ry="' + (r*0.85) + '" fill="' + th.acc + '" opacity="0.9"/>'
+      + '<polygon points="' + cx + ',' + (cy-r*0.9) + ' ' + (cx-r*0.55) + ',' + (cy+r*0.2) + ' ' + (cx+r*0.55) + ',' + (cy+r*0.2) + '" fill="' + th.acc + '" opacity="0.9"/>';
+  }
+
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" style="display:block;">'
+
+    // ── Bottle body ──
+    + '<defs>'
+    +   '<linearGradient id="bottleGrad" x1="0" y1="0" x2="1" y2="0">'
+    +     '<stop offset="0%" stop-color="#b8d8f0" stop-opacity="0.18"/>'
+    +     '<stop offset="40%" stop-color="#ddeeff" stop-opacity="0.28"/>'
+    +     '<stop offset="70%" stop-color="#b8d8f0" stop-opacity="0.18"/>'
+    +     '<stop offset="100%" stop-color="#90c0e0" stop-opacity="0.12"/>'
+    +   '</linearGradient>'
+    +   '<linearGradient id="labelGrad" x1="0" y1="0" x2="0" y2="1">'
+    +     '<stop offset="0%" stop-color="' + th.top + '"/>'
+    +     '<stop offset="100%" stop-color="' + th.mid + '"/>'
+    +   '</linearGradient>'
+    +   '<clipPath id="labelClip">'
+    +     '<rect x="30" y="200" width="240" height="360" rx="8"/>'
+    +   '</clipPath>'
+    + '</defs>'
+
+    // bottle cap
+    + '<rect x="112" y="30" width="76" height="38" rx="12" fill="#ddeeff" opacity="0.55"/>'
+    + '<rect x="118" y="36" width="64" height="26" rx="8" fill="#c8e8ff" opacity="0.7"/>'
+    // bottle neck
+    + '<path d="M112,68 Q100,90 80,130 L80,200 L220,200 L220,130 Q200,90 188,68 Z" fill="url(#bottleGrad)"/>'
+    // bottle body
+    + '<rect x="30" y="200" width="240" height="360" rx="24" fill="url(#bottleGrad)"/>'
+    // bottle shine
+    + '<rect x="48" y="210" width="18" height="330" rx="9" fill="white" opacity="0.12"/>'
+    // bottle bottom
+    + '<ellipse cx="150" cy="560" rx="120" ry="14" fill="#a0c4e0" opacity="0.18"/>'
+
+    // ── LABEL BACKGROUND ──
+    + '<g clip-path="url(#labelClip)">'
+    +   '<rect x="30" y="200" width="240" height="360" rx="8" fill="url(#labelGrad)"/>'
+
+    //  wave decoration inside label
+    +   '<path d="' + wave1 + '" fill="' + th.acc + '" opacity="0.12"/>'
+    +   '<path d="' + wave2 + '" fill="' + th.acc + '" opacity="0.08"/>'
+
+    //  bottom band
+    +   '<rect x="30" y="500" width="240" height="60" fill="' + th.top + '" opacity="0.6"/>'
+    + '</g>'
+
+    // ── LABEL CONTENT ──
+
+    // TOP STRIP
+    + '<rect x="30" y="200" width="240" height="28" rx="0" fill="' + th.acc + '" opacity="0.22"/>'
+    + '<text x="150" y="219" font-size="10" font-family="' + fontCSS + '" fill="' + th.light + '" text-anchor="middle" letter-spacing="3" font-weight="600">' + esc(d.type.toUpperCase()) + '</text>'
+
+    // LOGO / BRAND AREA
+    + (logo
+      ? '<image href="' + logo + '" x="105" y="232" width="90" height="45" preserveAspectRatio="xMidYMid meet"/>'
+      : (dropIcon(150, 262, 18))
+    )
+
+    // BRAND NAME
+    + '<text x="150" y="300" font-size="30" font-family="' + fontCSS + '" fill="white" text-anchor="middle" font-weight="900" letter-spacing="1">' + esc(d.brand) + '</text>'
+
+    // TAGLINE
+    + '<text x="150" y="318" font-size="10.5" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" letter-spacing="1.5" font-weight="600" font-style="italic">' + esc(d.tagline) + '</text>'
+
+    // DIVIDER LINE
+    + '<line x1="60" y1="327" x2="240" y2="327" stroke="' + th.acc + '" stroke-width="0.8" opacity="0.5"/>'
+
+    // VOLUME BADGE
+    + '<rect x="110" y="333" width="80" height="28" rx="14" fill="' + th.acc + '" opacity="0.2"/>'
+    + '<rect x="110" y="333" width="80" height="28" rx="14" fill="none" stroke="' + th.acc + '" stroke-width="1"/>'
+    + '<text x="150" y="351" font-size="13" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" font-weight="700">' + esc(d.volume) + '</text>'
+
+    // pH & TDS ROW
+    + '<rect x="45" y="370" width="88" height="38" rx="7" fill="' + th.acc + '" opacity="0.12"/>'
+    + '<text x="89" y="386" font-size="9" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" font-weight="700">pH LEVEL</text>'
+    + '<text x="89" y="401" font-size="15" font-family="' + fontCSS + '" fill="white" text-anchor="middle" font-weight="700">' + esc(d.ph) + '</text>'
+    + '<rect x="167" y="370" width="88" height="38" rx="7" fill="' + th.acc + '" opacity="0.12"/>'
+    + '<text x="211" y="386" font-size="9" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" font-weight="700">TDS</text>'
+    + '<text x="211" y="401" font-size="11" font-family="' + fontCSS + '" fill="white" text-anchor="middle" font-weight="700">' + esc(d.tds) + '</text>'
+
+    // MINERAL ANALYSIS TITLE
+    + '<text x="150" y="422" font-size="9" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" letter-spacing="2" font-weight="700">MINERAL ANALYSIS</text>'
+    + '<line x1="60" y1="425" x2="240" y2="425" stroke="' + th.acc + '" stroke-width="0.5" opacity="0.4"/>'
+
+    // MINERAL ROWS
+    + minRows
+
+    // BOTTOM BAND CONTENT
+    + '<text x="150" y="518" font-size="8.5" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" letter-spacing="1">' + esc(d.source) + '</text>'
+    + '<text x="150" y="533" font-size="8" font-family="' + fontCSS + '" fill="' + th.light + '" text-anchor="middle" opacity="0.7">' + esc(d.website) + '</text>'
+    + '<text x="150" y="548" font-size="7.5" font-family="' + fontCSS + '" fill="' + th.light + '" text-anchor="middle" opacity="0.6">Batch: ' + esc(d.batch) + ' | Mfg: ' + esc(d.mfgdate) + ' | Best Before: ' + esc(d.expdate) + '</text>'
+
+    // BORDER around label
+    + '<rect x="30" y="200" width="240" height="360" rx="24" fill="none" stroke="' + th.acc + '" stroke-width="0.8" opacity="0.35"/>'
+
+    // RECYCLING + company text at bottom
+    + '<text x="150" y="590" font-size="8" font-family="' + fontCSS + '" fill="#90b8d8" text-anchor="middle" opacity="0.7">' + esc(d.company) + '</text>'
+    + '<text x="150" y="603" font-size="7.5" font-family="' + fontCSS + '" fill="#90b8d8" text-anchor="middle" opacity="0.5">' + esc(d.address) + '</text>'
+
+    + '</svg>';
+
+  return '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;">'
+    + svg
+    // Flat label strip view
+    + '<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 16px;text-align:center;">'
+    + '<div style="font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:2px;margin-bottom:8px;">FLAT LABEL VIEW</div>'
+    + buildFlatLabel(d, th, fontCSS, logo)
+    + '</div>'
+    + '</div>';
+}
+
+// ─────────────────────────────────────────────────────────────────
+// FLAT LABEL SVG (wrap-around strip)
+// ─────────────────────────────────────────────────────────────────
+function buildFlatLabel(d, th, fontCSS, logo) {
+  var LW = 520, LH = 180;
+  var minRows = '';
+  var cols = Math.ceil((d.minerals||[]).length / 2);
+  (d.minerals||[]).slice(0,8).forEach(function(m, i){
+    var col = Math.floor(i/4), row = i%4;
+    var x = 330 + col * 95;
+    var y = 55 + row * 17;
+    minRows += '<text x="' + x + '" y="' + y + '" font-size="8.5" fill="' + th.light + '" opacity="0.85">' + esc(m.name) + '</text>'
+      + '<text x="' + (x+88) + '" y="' + y + '" font-size="8.5" fill="' + th.acc + '" text-anchor="end">' + esc(m.amount) + '</text>';
+  });
+
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + LW + ' ' + LH + '" width="' + LW + '" height="' + LH + '" style="display:block;">'
+    + '<defs>'
+    +   '<linearGradient id="flatGrad" x1="0" y1="0" x2="1" y2="0">'
+    +     '<stop offset="0%" stop-color="' + th.top + '"/>'
+    +     '<stop offset="55%" stop-color="' + th.mid + '"/>'
+    +     '<stop offset="100%" stop-color="' + th.top + '"/>'
+    +   '</linearGradient>'
+    + '</defs>'
+
+    // background
+    + '<rect x="0" y="0" width="' + LW + '" height="' + LH + '" rx="10" fill="url(#flatGrad)"/>'
+
+    // wave
+    + '<path d="M0,110 Q65,95 130,110 Q195,125 260,110 Q325,95 390,110 Q455,125 520,110 L520,' + LH + ' L0,' + LH + ' Z" fill="' + th.acc + '" opacity="0.1"/>'
+
+    // left: logo / drop
+    + (logo
+      ? '<image href="' + logo + '" x="18" y="30" width="70" height="40" preserveAspectRatio="xMidYMid meet"/>'
+      : '<ellipse cx="55" cy="55" rx="14" ry="18" fill="' + th.acc + '" opacity="0.9"/><polygon points="55,20 38,55 72,55" fill="' + th.acc + '" opacity="0.9"/>'
+    )
+    // brand name
+    + '<text x="55" y="105" font-size="13" font-family="' + fontCSS + '" fill="white" text-anchor="middle" font-weight="900">' + esc(d.brand) + '</text>'
+    + '<text x="55" y="120" font-size="8" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" font-style="italic">' + esc(d.tagline) + '</text>'
+
+    // center divider
+    + '<line x1="120" y1="15" x2="120" y2="' + (LH-15) + '" stroke="' + th.acc + '" stroke-width="0.5" opacity="0.3"/>'
+
+    // center: product info
+    + '<text x="220" y="35" font-size="9" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" letter-spacing="2" font-weight="700">' + esc(d.type.toUpperCase()) + '</text>'
+    + '<text x="220" y="60" font-size="22" font-family="' + fontCSS + '" fill="white" text-anchor="middle" font-weight="900">' + esc(d.volume) + '</text>'
+    + '<text x="220" y="78" font-size="9" font-family="' + fontCSS + '" fill="' + th.light + '" text-anchor="middle" opacity="0.8">pH ' + esc(d.ph) + '  ·  TDS ' + esc(d.tds) + '</text>'
+    + '<text x="220" y="96" font-size="8" font-family="' + fontCSS + '" fill="' + th.light + '" text-anchor="middle" opacity="0.65">' + esc(d.source) + '</text>'
+    + '<text x="220" y="115" font-size="7.5" font-family="' + fontCSS + '" fill="' + th.light + '" text-anchor="middle" opacity="0.5">Mfg: ' + esc(d.mfgdate) + '  ·  Best Before: ' + esc(d.expdate) + '</text>'
+    + '<text x="220" y="133" font-size="7" font-family="' + fontCSS + '" fill="' + th.light + '" text-anchor="middle" opacity="0.45">Batch: ' + esc(d.batch) + '</text>'
+    + '<text x="220" y="152" font-size="7" font-family="' + fontCSS + '" fill="' + th.light + '" text-anchor="middle" opacity="0.4">' + esc(d.company) + '</text>'
+    + '<text x="220" y="167" font-size="6.5" font-family="' + fontCSS + '" fill="' + th.light + '" text-anchor="middle" opacity="0.35">' + esc(d.website) + '</text>'
+
+    // right divider
+    + '<line x1="318" y1="15" x2="318" y2="' + (LH-15) + '" stroke="' + th.acc + '" stroke-width="0.5" opacity="0.3"/>'
+
+    // right: minerals
+    + '<text x="420" y="35" font-size="9" font-family="' + fontCSS + '" fill="' + th.acc + '" text-anchor="middle" letter-spacing="2" font-weight="700">MINERAL ANALYSIS</text>'
+    + '<line x1="330" y1="40" x2="510" y2="40" stroke="' + th.acc + '" stroke-width="0.5" opacity="0.3"/>'
+    + minRows
+
+    // border
+    + '<rect x="0" y="0" width="' + LW + '" height="' + LH + '" rx="10" fill="none" stroke="' + th.acc + '" stroke-width="0.8" opacity="0.25"/>'
+    + '</svg>';
+}
+
+// ─────────────────────────────────────────────────────────────────
+// DOWNLOAD
+// ─────────────────────────────────────────────────────────────────
+function downloadDesign(id) {
+  var d = collectData(id);
+  var th = getTheme(d.themeKey);
+  var fontCSS = getFontCSS(d.fontKey);
+  var fontUrlMap = {
+    playfair:"family=Playfair+Display:wght@700;900", cinzel:"family=Cinzel:wght@700",
+    montserrat:"family=Montserrat:wght@400;600;700", raleway:"family=Raleway:wght@400;600;700",
+    oswald:"family=Oswald:wght@400;600;700", lora:"family=Lora:wght@400;600;700",
+    bebas:"family=Bebas+Neue", nunito:"family=Nunito:wght@400;600;700",
+    poppins:"family=Poppins:wght@400;600;700", dancing:"family=Dancing+Script:wght@700",
+    abril:"family=Abril+Fatface", dmsans:"family=DM+Sans:wght@400;500;600"
+  };
+  var fontLink = 'https://fonts.googleapis.com/css2?' + (fontUrlMap[d.fontKey]||fontUrlMap.raleway) + '&display=swap';
+  var body = buildBottleHTML(d);
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + esc(d.name) + '</title>'
+    + '<link href="' + fontLink + '" rel="stylesheet">'
+    + '<style>body{background:linear-gradient(160deg,#0a1e2e,#0d2b3a);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:16px;font-family:sans-serif;}'
+    + '.title{font-size:16px;color:#90c8e8;letter-spacing:3px;text-transform:uppercase;}</style>'
+    + '</head><body><div class="title">' + esc(d.name) + '</div>' + body + '</body></html>';
+  var blob = new Blob([html], {type:'text/html'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = d.name.replace(/\s+/g,'-').toLowerCase() + '.html';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// ESC
+// ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─────────────────────────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────────────────────────
+addNewDesign();
+
+var d2 = defaultData();
+d2.name     = 'Design 2';
+d2.brand    = 'GlacierFlow';
+d2.tagline  = 'Pure Alpine Source';
+d2.type     = 'Glacial Spring Water';
+d2.source   = 'Alpine Glacier, Swiss Alps';
+d2.ph       = '7.8';
+d2.tds      = '42 mg/L';
+d2.volume   = '1000 ml';
+d2.website  = 'www.glacierflow.com';
+d2.company  = 'GlacierFlow International Ltd.';
+d2.themeKey = 'glacier';
+d2.fontKey  = 'cinzel';
+d2.minerals = [
+  {name:'Calcium',    amount:'9.5 mg/L'},
+  {name:'Magnesium',  amount:'4.2 mg/L'},
+  {name:'Sodium',     amount:'2.1 mg/L'},
+  {name:'Potassium',  amount:'0.8 mg/L'},
+  {name:'Silica',     amount:'12 mg/L'},
+  {name:'Fluoride',   amount:'0.1 mg/L'}
+];
+addNewDesign(d2);
+
+designs.forEach(function(d){ liveUpdate(d.id); });
+</script>
+</body>
+</html>
